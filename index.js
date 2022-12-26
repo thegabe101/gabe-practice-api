@@ -46,10 +46,50 @@ newspapers.forEach(newspaper => {
 })
 
 
-//this url will scrape from electrek
+//this route will scrape from electrek
 app.get('/news', (req, res) => {
     res.json(articles);
 });
+
+
+app.get('/news/:newspaperId', async (req, res) => {
+    console.log(req);
+    console.log(req.params.newspaperId);
+
+    const newspaperId = req.params.newspaperId;
+
+    const newspaperAddress = newspapers.filter(newspaper => newspaper.name == newspaperId)[0].address;
+
+    console.log(newspaperAddress);
+
+
+    axios.get(newspaperAddress).then(response => {
+        const newspaperHtml = response.data;
+        const $$ = cheerio.load(newspaperHtml);
+        const specificArticles = [];
+
+        $$('a:contains("Musk")', newspaperHtml).each(function () {
+            const title = $$(this).text();
+            const url = $$(this).attr('href');
+
+            specificArticles.push({
+                title,
+                url,
+                source: newspaperId
+            })
+        })
+        if (specificArticles === []) {
+            console.log('Empty array.')
+        }
+
+        else res.json(specificArticles);
+
+    }).catch(err => {
+        res.response(err);
+    })
+})
+
+
 
 app.listen(PORT, () => console.log(`Server is online. Port ${PORT}.`));
 
